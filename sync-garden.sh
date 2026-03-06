@@ -32,10 +32,11 @@ while IFS= read -r -d '' file; do
         mkdir -p "$(dirname "$att_dest")"
         cp "$att_src" "$att_dest"
       fi
-    done < <(grep -oP '!\[\[([^]]+)\]\]' "$file" | sed 's/!\[\[//;s/\]\]//' | while read -r name; do
-      find "$VAULT_DIR/Attachments" -name "$name" -printf '%P\n' 2>/dev/null | head -1 | while read -r p; do
-        [[ -n "$p" ]] && echo "Attachments/$p"
-      done
+    done < <(sed -n 's/.*!\[\[\([^]]*\)\]\].*/\1/p' "$file" | while read -r name; do
+      att_file=$(find "$VAULT_DIR/Attachments" -name "$name" 2>/dev/null | head -1)
+      if [[ -n "$att_file" ]]; then
+        echo "Attachments/${att_file#"$VAULT_DIR"/Attachments/}"
+      fi
     done)
   fi
 done < <(find "$VAULT_DIR" -name '*.md' -not -path '*/.obsidian/*' -not -path '*/node_modules/*' -print0)
